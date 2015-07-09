@@ -1,0 +1,10 @@
+h1= title
+
+fieldset
+  legend Delete Image
+  form(method="post", action="/delete", enctype="multipart/form-data")
+    .clearfix
+      label id
+      .input: input(name="id", type="text")
+    .actions
+    input.btn(type="submit") 
