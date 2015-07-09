@@ -36,22 +36,25 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(multer({ dest: './uploads/'}))
 
+function displayKey(obj) {
+	for (var k in obj) {
+		console.log(k);
+		// console.log(obj[k]);
+	}
+}
+
 
 app.get('/', function(req, res) {
 	var data = {};
 	var count = 0;
-	console.log('GET / ====================');
 	Counter.count(function(err, doc){
 		if(err) {
 			console.log(err);
 			next(err);
 		}
-
-		console.log(doc);
 		count = doc;
 
 		if(count === 0) {
-			console.log('GET / ====================');
 			data['_id'] = 'imageid';
 			data['seq'] = 0;
 			Counter.create(data, function(err, doc){
@@ -59,42 +62,18 @@ app.get('/', function(req, res) {
 					console.log(err);
 					next(err);
 				}
-				console.log(doc);
 			});
 		}
 	});
-
-	// console.log(count);
-
-	
-	
-	
 
 	res.render('index', {title: 'Upload background image'});
 });
 
 
 app.post("/upload", function(req, res) {
-	// var form = new formidable.IncomingForm();
-
-
-	// console.log('[upload] ===============');
-	// aaa = req.files;
-	// for(var k in aaa) {
-	// 	console.log(k);
-	// 	console.log(aaa[k]);
-	// }
-
-	console.log(req.files.file.path);
-	console.log(req.files.file.originalname);
-	console.log(req.files.file.mimetype);
 	var options = [{content_type: req.files.file.mimetype}];
 
 	savepicv2.putGridFileByPath(req.files.file.path, req.files.file.originalname /*file.filename*/, options, function(err, result) {
-		// console.log('[result] =============');
-
-			// res.send({result: result, rc: 0});
-		// res.send({rc: 0});
 		return res.redirect('/');
 	});
 });
@@ -112,14 +91,7 @@ app.post("/upload2", function(req, res) {
 		}
 
 		// buf, name, options, fn
-		console.log('[upload] read buf ===============');
-		console.log(files.file.path);
-
 		savepicv2.putGridFileByPath(files.file.path, files.file.name /*file.filename*/, options, function(err, result) {
-			console.log('[result] =============');
-
-				// res.send({result: result, rc: 0});
-			// res.send({rc: 0});
 			res.redirect('/');
 		});
 
@@ -135,27 +107,30 @@ app.post("/upload2", function(req, res) {
 		console.log('ERROR ============');
 		console.log(err);
 		res.writeHead(400, {'content-type': 'text/plain'}); // 400: Bad Request
-		// res.send('error form');
-
 	});
 });
 
 app.get("/file/:id", function(req, res) {
-	console.log('/file/:id ===============');
-	console.log(req.params.id);
 	var options = []
 	return savepicv2.getGridFile(req.params.id, options, function(err, store) {
-		console.log('/file/:id ===============');
-		console.log(store.fileId);
-		console.log(store.filename);
-		console.log(store.contentType);
-		console.log(store.metadata);
-		console.log(store.filename.toString());
-		console.log(store.fileId.toString());
-
 		res.header("Content-Type", store.contentType);
 		res.header("Content-Disposition", "attachment; filename=" + store.filename);
 		return store.stream(true).pipe(res);
+	});
+});
+
+app.get("/delete", function(req, res) {
+	res.render('delete', {title: 'delete background image'});
+});
+
+app.post("/delete", function(req, res) {
+	var options = [];
+	// id, options, fn
+	console.log('delete =====================');
+	// displayKey(req.body);
+
+	savepicv2.deleteGridFile(req.body.id, options, function(err, result) {
+		return res.redirect('/');
 	});
 });
 

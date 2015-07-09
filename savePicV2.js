@@ -31,16 +31,10 @@ exports.getGridFile = function(id, options, fn) {
 	var db = mongoose.connection.db;
 	var	options = parse(options);
 
-	console.log('getGridFile ===============');
-	console.log(id);
-	console.log(typeof id);
 	id = parseInt(id);
-	console.log(typeof id);
-
-	    // id = new ObjectID(id),
-	var store = new GridStore(db, id, id, "r", {root: 'image'});
-	
-
+	// {root: 'image'}
+	console.log('=============' + options.root);
+	var store = new GridStore(db, id, id, "r", {root: options.root});
 	store.open(function(err, store) {
 		if (err) {
 			console.log('getGridFile ERROR ===============');
@@ -49,28 +43,7 @@ exports.getGridFile = function(id, options, fn) {
 			return fn(err);
 		}
 		else {
-			console.log('getGridFile READ ================');
-			// for (var k in store) {
-			// 	console.log(k);
-			// }
-
-			console.log(store.fileId);
-			console.log(store.filename);
-			console.log(store.contentType);
-			console.log(store.metadata);
-			console.log(store.filename.toString());
-			console.log(store.fileId.toString());
 			fn(null, store);
-
-			// if ((store.filename.toString() == store.fileId.toString()) 
-			// 	&& store.metadata
-			// 	&& store.metadata.filename) {
-			// 		console.log(tore.metadata);
-			// 		console.log(store.metadata.filename);
-
-			// 		store.filename = store.metadata.filename;
-			// 		fn(null, store);
-			// 	}
 		}
 	})
 }	
@@ -97,8 +70,6 @@ exports.putGridFileByPath = function(path, name, options, fn) {
 
 	// var obj_id = utils.generate_mongoose_object_id('f');
 	var obj_id = getNextSequence("imageid");
-	
-	
 	var gridStore = new GridStore(db, obj_id, name, "w", options);
 
 	gridStore.open(function(err, gridStore){
@@ -106,24 +77,29 @@ exports.putGridFileByPath = function(path, name, options, fn) {
 			return fn(err);
 		}	
 		else {
-			console.log('[putGridFileByPath] ---------------');
-			console.log(gridStore.fileId);
 			gridStore.writeFile(path, fn);
 		}
 			
 	});
 }
 
-exports.deleteGridFile = function(id, fn){
-	console.log('Deleting GridFile '+id);
-	var db= mongoose.connection.db,
-		id = new mongoose.mongo.BSONPure.ObjectID(id),
-		store = new GridStore(db, id, 'r', {root: 'fs'});
+exports.deleteGridFile = function(id, options, fn){
+	var db= mongoose.connection.db;
+	var	options = parse(options);
 
+	id = parseInt(id);
+	console.log('Deleting GridFile '+id);
+
+	var	store = new GridStore(db, id, id, 'r', {root: options.root});
 	store.unlink(function(err, result){
-		if (err)
+		if (err) {
+			console.log('deleteGridFile ERROR ===================');
 			return fn(err);
-		
+		}
+			
+		for (var k in result) {
+			console.log(k);
+		}
 		return fn(null);
 	});
 }
