@@ -104,19 +104,31 @@ exports.deleteGridFile = function(id, options, fn){
 	});
 }
 
+// function parse(options) {
+// 	var opts = {};
+// 	if (options.length > 0) {
+// 		opts = options[0];
+// 	}
+// 	else
+// 		opts = options;
+
+// 	if (!opts.metadata)
+// 		opts.metadata = {};
+
+// 	if (!opts.root)
+// 		opts.root = 'image'
+
+// 	return opts;
+// }
+
 function parse(options) {
 	var opts = {};
-	if (options.length > 0) {
-		opts = options[0];
-	}
-	else
-		opts = options;
+	if (options.length > 0) opts = options[0];
+	else opts = options;
 
-	if (!opts.metadata)
-		opts.metadata = {};
+	if (!opts.metadata) opts.metadata = {};
 
-	if (!opts.root)
-		opts.root = 'image'
+	if (!opts.root) opts.root = 'image'
 
 	return opts;
 }

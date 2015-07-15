@@ -11,6 +11,8 @@ var multer  = require('multer');
 var savepicv2 = require('./savePicV2');
 var utils = require('./utils');
 var Counter = require('./models/counters.js');
+var errorHandler = require('./middleware/errorHandlers');
+var log = require('./middleware/logger');
 
 
 
@@ -34,7 +36,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(multer({ dest: './uploads/'}))
+app.use(multer({ dest: './uploads/'}));
+app.use(log.logger);
 
 function displayKey(obj) {
 	for (var k in obj) {
@@ -110,12 +113,28 @@ app.post("/upload2", function(req, res) {
 	});
 });
 
-app.get("/file/:id", function(req, res) {
+app.get("/file/:id", function(req, res, next) {
 	var options = []
 	return savepicv2.getGridFile(req.params.id, options, function(err, store) {
+		if (err) {
+			console.log('get file error ===============');
+			console.log(err);
+			next(new Error('can not get file '));
+		}
+
 		res.header("Content-Type", store.contentType);
 		res.header("Content-Disposition", "attachment; filename=" + store.filename);
-		return store.stream(true).pipe(res);
+		console.log('get file ======================');
+		
+		
+		// return store.stream(true).pipe(res);
+		store.stream(true).pipe(res);
+		store.read(function(err, data) {
+			// displayKey(data);
+			console.log(store.contentType);
+			res.contentType(store.contentType);
+			res.end(data, 'binary');
+		});
 	});
 });
 
@@ -133,6 +152,9 @@ app.post("/delete", function(req, res) {
 		return res.redirect('/');
 	});
 });
+
+app.use(errorHandler.error);
+app.use(errorHandler.notFound);
 
 app.listen(3000, function() {
 	return console.log("Server running on port 3000");
