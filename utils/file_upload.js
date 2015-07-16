@@ -172,12 +172,13 @@ imageUpload_V4 = function() {
 		function(err, result) {
 			console.log('----------------------');
 			console.log('[result] ================');
-			result.forEach(function(elem) {
-				console.log(elem.options);
-				console.log(elem.fileId);
-				console.log(elem.filename);
-				console.log(elem.contentType);
-			});
+			console.log(result.length);
+			// result.forEach(function(elem) {
+			// 	console.log(elem.options);
+			// 	console.log(elem.fileId);
+			// 	console.log(elem.filename);
+			// 	console.log(elem.contentType);
+			// });
 
 
 			process.exit();

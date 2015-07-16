@@ -113,7 +113,36 @@ app.post("/upload2", function(req, res) {
 	});
 });
 
+
+// rendering file image to browser
 app.get("/file/:id", function(req, res, next) {
+	var options = []
+	return savepicv2.getGridFile(req.params.id, options, function(err, store) {
+		if (err) {
+			console.log('get file error ===============');
+			console.log(err);
+			next(new Error('can not get file '));
+		}
+
+		res.header("Content-Type", store.contentType);
+		
+		// res.writeHead(200, {'Content-Type': store.contentType});
+		
+		return store.stream(true).pipe(res);
+		// store.stream(true).pipe(res);
+		// store.read(function(err, data) {
+		// 	// displayKey(data);
+		// 	console.log(store.contentType);
+		// 	res.contentType(store.contentType);
+		// 	res.end(data, 'binary');
+		// });
+	});
+});
+
+
+
+// download file to PC
+app.get("/file/download/:id", function(req, res, next) {
 	var options = []
 	return savepicv2.getGridFile(req.params.id, options, function(err, store) {
 		if (err) {
@@ -126,15 +155,17 @@ app.get("/file/:id", function(req, res, next) {
 		res.header("Content-Disposition", "attachment; filename=" + store.filename);
 		console.log('get file ======================');
 		
+		// res.writeHead(200, {'Content-Type': 'image/jpeg'});
+		// res.writeHead(200, {'Content-Type': store.contentType});
 		
-		// return store.stream(true).pipe(res);
-		store.stream(true).pipe(res);
-		store.read(function(err, data) {
-			// displayKey(data);
-			console.log(store.contentType);
-			res.contentType(store.contentType);
-			res.end(data, 'binary');
-		});
+		return store.stream(true).pipe(res);
+		// store.stream(true).pipe(res);
+		// store.read(function(err, data) {
+		// 	// displayKey(data);
+		// 	console.log(store.contentType);
+		// 	res.contentType(store.contentType);
+		// 	res.end(data, 'binary');
+		// });
 	});
 });
 
