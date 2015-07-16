@@ -1,8 +1,11 @@
 var fs = require('fs');
 var async = require('async');
 var mongoose = require('mongoose');
+var theme = require('./theme')
 var GridStore = mongoose.mongo.GridStore;
 // var Grid      = mongoose.mongo.Grid;
+
+var baseCnt = 0;
 
 var image_folder = 'bgImage';
 var fileExtType = {
@@ -49,7 +52,7 @@ readDirSync = function(dir_path) {
 renameSync = function(path, fileLsit, baseCnt) {
 	// return fs.renameSync(oldPath, newPath);
 
-	var baseCnt = baseCnt;
+	// var baseCnt = baseCnt;
 	for(var i=baseCnt; i < fileLsit.length + baseCnt; i++) {
 		fileExt = getFileExt(fileLsit[i - baseCnt]);
 		fs.renameSync(path + fileLsit[i-baseCnt], path + i.toString() + fileExt[0]);
@@ -91,7 +94,7 @@ function parse(options) {
 }
 
 connectMongoose = function(callback) {
-	var mongoLocal = 'mongodb://localhost:14000/upload_test'
+	var mongoLocal = 'mongodb://localhost:14000/sideview'
 	mongoose.connect(mongoLocal, function(err) {
 		if(err) {
 			console.log('connection error', err);
@@ -102,6 +105,85 @@ connectMongoose = function(callback) {
 		}
 	});
 }
+
+// use theme.js
+imageUpload_V3 = function() {
+	var fileExt = '';
+	var dirPath = '';
+	var mimeType = '';
+	var options = [];
+	
+	var imageList = [];
+
+	async.waterfall([
+			function(callback) {
+				connectMongoose(function(data) {
+					console.log(data);
+					if(data.ret !== 0) {
+						throw new Error('fail connect db');
+					};
+
+					callback(null, data);
+				});
+			},
+			function(data, callback) {
+				dirPath = realpathSync(theme.dir) + '/';				
+				imageList = readDirSync(theme.dir);
+				callback(null, imageList);
+			},
+			function(imageList,callback) {
+				function done(err) {
+					if(err) throw err;
+					callback(null, imageList);
+				}
+				function iterator (imageList, callback) {
+					var obj_id = 0;
+					fileExt = getFileExt(imageList);
+					mimeType = getContentType(fileExt[0].substr(1));
+
+					// find image id with imageList from theme
+					var themeList = theme.image;
+					for(var i=0; i < themeList.length; i++) {
+						
+						if(themeList[i].name == imageList) {
+							obj_id = themeList[i].id;
+							console.log('break');
+							break;
+						}
+					}
+
+					options = [{content_type: mimeType}];
+					// path, obj_id, name, options, fn
+					putGridFileByPath(dirPath + imageList, 
+									obj_id, 
+									imageList, 
+									options, 
+									function(err, result) {
+										console.log('---------------------');
+										console.log(result.options);
+										console.log(result.fileId);
+										console.log(result.filename);
+										console.log(result.contentType);
+										if(err) {
+											console.log('db write error');
+											throw err;
+										}
+
+										callback(null, result.filename);
+									});
+				}
+				async.forEach(imageList, iterator, done);
+			}
+		],
+		function(err, result) {
+			console.log('----------------------');
+			console.log('[result] ================');
+			console.log(result);
+
+
+			process.exit();
+		});
+};
 
 imageUpload_V1 = function() {
 	var fileExt = '';
@@ -151,7 +233,7 @@ imageUpload_V2 = function() {
 	var dirPath = '';
 	var mimeType = '';
 	var options = [];
-	var baseCnt = 0;
+	
 	var imageList = [];
 
 	async.waterfall([
@@ -220,12 +302,11 @@ imageUpload_V2 = function() {
 
 			process.exit();
 		});
-
-	
 };
 
 
 
 
 // imageUpload_V1();
-imageUpload_V2();
+// imageUpload_V2();
+imageUpload_V3();
