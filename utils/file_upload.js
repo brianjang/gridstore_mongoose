@@ -1,11 +1,13 @@
 var fs = require('fs');
 var async = require('async');
 var mongoose = require('mongoose');
-var theme = require('./theme')
+
 var GridStore = mongoose.mongo.GridStore;
 // var Grid      = mongoose.mongo.Grid;
 
 var baseCnt = 0;
+var prefix = 'f';
+var grid_root = 'files';
 
 var image_folder = 'bgImage';
 var fileExtType = {
@@ -88,7 +90,7 @@ function parse(options) {
 
 	if (!opts.metadata) opts.metadata = {};
 
-	if (!opts.root) opts.root = 'files'
+	if (!opts.root) opts.root = grid_root;
 
 	return opts;
 }
@@ -106,8 +108,85 @@ connectMongoose = function(callback) {
 	});
 }
 
+generate_mongoose_object_id = function(prefix) {
+	var id = mongoose.Types.ObjectId();
+	return prefix + String(id);
+}
+
+// change object id like fxxxxx
+imageUpload_V4 = function() {
+	var fileExt = '';
+	var dirPath = '';
+	var mimeType = '';
+	var options = [];
+	
+	var imageList = [];
+
+	async.waterfall([
+			function(callback) {
+				connectMongoose(function(data) {
+					console.log(data);
+					if(data.ret !== 0) {
+						throw new Error('fail connect db');
+					};
+					callback(null, data);
+				});
+			},
+			function(data, callback) {
+				makeDirSync(image_folder);
+				dirPath = realpathSync(image_folder) + '/';
+				imageList = readDirSync(image_folder);
+				callback(null, imageList);
+			},
+			function(imageList,callback) {
+				var ret = [];
+
+				function done(err) {
+					if(err) throw err;
+					callback(null, ret);
+				}
+				function iterator (imageList, callback) {
+					fileExt = getFileExt(imageList);
+					mimeType = getContentType(fileExt[0].substr(1));
+
+					options = [{content_type: mimeType}];
+					// path, obj_id, name, options, fn
+					putGridFileByPath(dirPath + imageList, 
+									generate_mongoose_object_id(prefix), 
+									imageList, 
+									options, 
+									function(err, result) {
+										if(err) {
+											console.log('db write error');
+											throw err;
+										};
+
+										ret.push(result);
+
+										callback(null, result);
+									});
+				}
+				async.forEach(imageList, iterator, done);
+			}
+		],
+		function(err, result) {
+			console.log('----------------------');
+			console.log('[result] ================');
+			result.forEach(function(elem) {
+				console.log(elem.options);
+				console.log(elem.fileId);
+				console.log(elem.filename);
+				console.log(elem.contentType);
+			});
+
+
+			process.exit();
+		});
+};
+
 // use theme.js
 imageUpload_V3 = function() {
+	var theme = require('./theme')
 	var fileExt = '';
 	var dirPath = '';
 	var mimeType = '';
@@ -309,4 +388,5 @@ imageUpload_V2 = function() {
 
 // imageUpload_V1();
 // imageUpload_V2();
-imageUpload_V3();
+// imageUpload_V3();
+imageUpload_V4();
